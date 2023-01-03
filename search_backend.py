@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import math
 import inverted_index_gcp
-
+# import inverted_index_colab
 with open('small_index/indexes/anchor_index.pkl', 'rb') as f:
     anchor_index = pickle.load(f)
 
@@ -16,7 +16,25 @@ with open('small_index/indexes/title_index.pkl', 'rb') as f:
     title_index = pickle.load(f)
 
 # print(type(anchor_index))
-print(anchor_index.posting_locs)
+# print(len(body_index.df.items()))
+# print(len(title_index.df.items()))
+# print(len(anchor_index.df.items()))
+
+
+# for x,y in [('C:\\Users\\eitan\\PycharmProjects\\Search-Engine\\small_index\\postings_gcp_body\\0_000.bin', 0)]:
+#     print(y)
+# print(body_index.posting_locs)
+itr = anchor_index.posting_lists_iter("C:\\Users\\eitan\\PycharmProjects\\Search-Engine\\small_index\\postings_gcp_anchor")
+# print(next(itr))
+# print(title_index.df.keys())
+# print(next(itr))
+count = 0
+for w in itr:
+    count+=1
+print(count)
+print(len(body_index.df.keys()))
+
+
 
 
 def generate_query_tfidf_vector(query_to_search, index):
