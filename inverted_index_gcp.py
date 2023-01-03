@@ -10,7 +10,8 @@ from operator import itemgetter
 from time import time
 from pathlib import Path
 import pickle
-from google.cloud import storage
+#TODO: Uncomment later
+# from google.cloud import storage
 from collections import defaultdict
 from contextlib import closing
 
