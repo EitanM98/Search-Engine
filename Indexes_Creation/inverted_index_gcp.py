@@ -178,7 +178,7 @@ class InvertedIndex:
 
 
     @staticmethod
-    def write_a_posting_list(b_w_pl, bucket_name):
+    def write_a_posting_list(b_w_pl, bucket_name, index_type=""):
         posting_locs = defaultdict(list)
         bucket_id, list_w_pl = b_w_pl
         
@@ -192,17 +192,17 @@ class InvertedIndex:
                 # save file locations to index
                 posting_locs[w].extend(locs)
             writer.upload_to_gcp() 
-            InvertedIndex._upload_posting_locs(bucket_id, posting_locs, bucket_name)
+            InvertedIndex._upload_posting_locs(bucket_id, posting_locs, bucket_name, index_type)
         return bucket_id
 
     
     @staticmethod
-    def _upload_posting_locs(bucket_id, posting_locs, bucket_name):
+    def _upload_posting_locs(bucket_id, posting_locs, bucket_name, index_type=""):
         with open(f"{bucket_id}_posting_locs.pickle", "wb") as f:
             pickle.dump(posting_locs, f)
         client = storage.Client()
         bucket = client.bucket(bucket_name)
-        blob_posting_locs = bucket.blob(f"postings_gcp/{bucket_id}_posting_locs.pickle")
+        blob_posting_locs = bucket.blob(f"postings_gcp{index_type}/{bucket_id}_posting_locs.pickle")
         blob_posting_locs.upload_from_filename(f"{bucket_id}_posting_locs.pickle")
     
 
