@@ -20,7 +20,7 @@ BLOCK_SIZE = 1999998
 
 class MultiFileWriter:
     """ Sequential binary writer to multiple files of up to BLOCK_SIZE each. """
-    def __init__(self, base_dir, name, bucket_name):
+    def __init__(self, base_dir, name, bucket_name, index_type=""):
         self._base_dir = Path(base_dir)
         self._name = name
         self._file_gen = (open(self._base_dir / f'{name}_{i:03}.bin', 'wb') 
@@ -29,6 +29,7 @@ class MultiFileWriter:
         # Connecting to google storage bucket. 
         self.client = storage.Client()
         self.bucket = self.client.bucket(bucket_name)
+        self.index_type = index_type
         
     
     def write(self, b):
@@ -55,7 +56,7 @@ class MultiFileWriter:
             The function saves the posting files into the right bucket in google storage.
         '''
         file_name = self._f.name
-        blob = self.bucket.blob(f"postings_gcp/{file_name}")
+        blob = self.bucket.blob(f"postings_gcp{self.index_type}/{file_name}")
         blob.upload_from_filename(file_name)
 
         
@@ -182,7 +183,7 @@ class InvertedIndex:
         posting_locs = defaultdict(list)
         bucket_id, list_w_pl = b_w_pl
         
-        with closing(MultiFileWriter(".", bucket_id, bucket_name)) as writer:
+        with closing(MultiFileWriter(".", bucket_id, bucket_name, index_type=index_type)) as writer:
             for w, pl in list_w_pl: 
                 # convert to bytes
                 b = b''.join([(doc_id << 16 | (tf & TF_MASK)).to_bytes(TUPLE_SIZE, 'big')
