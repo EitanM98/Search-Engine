@@ -12,8 +12,31 @@ with open('small_index/indexes/anchor_index.pkl', 'rb') as f:
 with open('small_index/indexes/body_index.pkl', 'rb') as f:
     body_index = pickle.load(f)
 
-with open('small_index/indexes/title_index.pkl', 'rb') as f:
+# with open('small_index/indexes/title_index.pkl', 'rb') as f:
+#     title_index = pickle.load(f)
+
+with open('small_index/test_title/title_index.pkl', 'rb') as f:
     title_index = pickle.load(f)
+
+
+TUPLE_SIZE = 6
+TF_MASK = 2 ** 16 - 1 # Masking the 16 low bits of an integer
+from contextlib import closing
+from inverted_index_gcp import MultiFileReader
+
+def read_posting_list(inverted, w):
+  with closing(MultiFileReader()) as reader:
+    locs = inverted.posting_locs[w]
+    b = reader.read(locs, inverted.df[w] * TUPLE_SIZE,base_dir="./small_index/postings_gcp_body")
+    posting_list = []
+    for i in range(inverted.df[w]):
+      doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')
+      tf = int.from_bytes(b[i*TUPLE_SIZE+4:(i+1)*TUPLE_SIZE], 'big')
+      posting_list.append((doc_id, tf))
+    return posting_list
+
+print(read_posting_list(body_index,"amsterdam"))
+
 
 # print(type(anchor_index))
 # print(len(body_index.df.items()))
@@ -24,15 +47,15 @@ with open('small_index/indexes/title_index.pkl', 'rb') as f:
 # for x,y in [('C:\\Users\\eitan\\PycharmProjects\\Search-Engine\\small_index\\postings_gcp_body\\0_000.bin', 0)]:
 #     print(y)
 # print(body_index.posting_locs)
-itr = anchor_index.posting_lists_iter("C:\\Users\\eitan\\PycharmProjects\\Search-Engine\\small_index\\postings_gcp_anchor")
+# itr = anchor_index.posting_lists_iter("C:\\Users\\eitan\\PycharmProjects\\Search-Engine\\small_index\\postings_gcp_anchor")
 # print(next(itr))
 # print(title_index.df.keys())
 # print(next(itr))
-count = 0
-for w in itr:
-    count+=1
-print(count)
-print(len(body_index.df.keys()))
+# count = 0
+# for w in itr:
+#     count+=1
+# print(count)
+# print(len(body_index.df.keys()))
 
 
 

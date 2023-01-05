@@ -118,6 +118,8 @@ class InvertedIndex:
         # starts. 
         self.posting_locs = defaultdict(list)
 
+        self.id_doclen_dict = dict()
+
         for doc_id, tokens in docs.items():
             self.add_doc(doc_id, tokens)
 
