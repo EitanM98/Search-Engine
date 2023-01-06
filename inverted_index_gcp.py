@@ -64,18 +64,25 @@ class MultiFileWriter:
         
 
 class MultiFileReader:
-    def __init__(self):
-        self.client = storage.Client()
-        self.bucket = self.client.bucket(bucket_name)
     """ Sequential binary reader of multiple files of up to BLOCK_SIZE each. """
     def __init__(self):
         self._open_files = {}
+        self.client = storage.Client()
+        self.bucket = self.client.bucket(bucket_name)
 
-    def read(self, locs, n_bytes):
+    def read(self, locs, n_bytes, index_type=""):
         b = []
+        bin_path = Path(f"gs://{bucket_name}/postings_gcp{index_type}")
+
+        # blob_path = bucket.blob('f"postings_gcp{index_type}').name
+        # for blob in client.list_blobs(bucket_name, prefix=f'postings_gcp{}/'):
+        #     if 'body_index' in blob.name:
+        # blob = self.bucket.blob(f"postings_gcp{self.index_type}/{file_name}")
+        # blob.upload_from_filename(file_name)
+
         for f_name, offset in locs:
             if f_name not in self._open_files:
-                self._open_files[f_name] = open(f_name, 'rb')
+                self._open_files[f_name] = open(f'{bin_path}/{f_name}', 'rb')
             f = self._open_files[f_name]
             f.seek(offset)
             n_read = min(n_bytes, BLOCK_SIZE - offset)
