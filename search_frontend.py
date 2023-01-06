@@ -107,6 +107,10 @@ def search_title():
         list of ALL (not just top 100) search results, ordered from best to 
         worst where each element is a tuple (wiki_id, title).
     '''
+
+    # query=["hello world"] - > [(wiki_id, title)] sorted decreasing
+    # in a way that the title that contains most words of the query
+
     res = []
     query = request.args.get('query', '')
     if len(query) == 0:
@@ -186,6 +190,8 @@ def get_pageview():
           list of page view numbers from August 2021 that correrspond to the 
           provided list article IDs.
     '''
+
+
     res = []
     wiki_ids = request.get_json()
     if len(wiki_ids) == 0:
