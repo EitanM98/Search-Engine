@@ -6,6 +6,8 @@ import numpy as np
 import math
 import inverted_index_gcp
 # import inverted_index_colab
+
+
 with open('small_index/indexes/anchor_index.pkl', 'rb') as f:
     anchor_index = pickle.load(f)
 

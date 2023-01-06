@@ -1,11 +1,41 @@
+import pickle
+from google.cloud import storage
 from flask import Flask, request, jsonify
+
 
 class MyFlaskApp(Flask):
     def run(self, host=None, port=None, debug=None, **options):
+        bucket_name = "ir_assg3_eithan"
+        client = storage.Client()
+        self.bucket = client.bucket(bucket_name=bucket_name)
+        for blob in client.list_blobs(bucket_name, prefix='indexes/'):
+            if 'body_index' in blob.name:
+                with blob.open('rb') as f:
+                    self.body_index = pickle.load(f)
+            if 'anchor_index' in blob.name:
+                with blob.open('rb') as f:
+                    self.anchor_index = pickle.load(f)
+            if 'title_index' in blob.name:
+                with blob.open('rb') as f:
+                    self.title_index = pickle.load(f)
+            if 'doc_len_dict' in blob.name:
+                with blob.open('rb') as f:
+                    self.doc_len_dict = pickle.load(f)
+            # if 'page_rank_dict' in blob.name:
+            #     with blob.open('rb') as f:
+            #         self.page_rank_dict = pickle.load(f)
+            if 'page_views_dict' in blob.name:
+                with blob.open('rb') as f:
+                    self.page_views_dict = pickle.load(f)
+            if 'doc_id_title_dict' in blob.name:
+                with blob.open('rb') as f:
+                    self.doc_id_title_dict = pickle.load(f)
         super(MyFlaskApp, self).run(host=host, port=port, debug=debug, **options)
 
 app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+
 
 # CHANGEEEE
 @app.route("/search")
@@ -134,7 +164,7 @@ def get_pagerank():
     if len(wiki_ids) == 0:
       return jsonify(res)
     # BEGIN SOLUTION
-
+    res = [app.page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
     # END SOLUTION
     return jsonify(res)
 
@@ -161,11 +191,13 @@ def get_pageview():
     if len(wiki_ids) == 0:
       return jsonify(res)
     # BEGIN SOLUTION
-
+    # res = [app.page_views_dict.get(doc_id, -1) for doc_id in wiki_ids]
+    res=["nada"]
     # END SOLUTION
     return jsonify(res)
 
 
 if __name__ == '__main__':
+
     # run the Flask RESTful API, make the server publicly available (host='0.0.0.0') on port 8080
     app.run(host='0.0.0.0', port=8080, debug=True)
