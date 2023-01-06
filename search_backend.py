@@ -26,10 +26,10 @@ TF_MASK = 2 ** 16 - 1 # Masking the 16 low bits of an integer
 from contextlib import closing
 from inverted_index_gcp import MultiFileReader
 
-def read_posting_list(inverted, w):
+def read_posting_list(inverted, w, index_type=""):
   with closing(MultiFileReader()) as reader:
     locs = inverted.posting_locs[w]
-    b = reader.read(locs, inverted.df[w] * TUPLE_SIZE,base_dir="./small_index/postings_gcp_body")
+    b = reader.read(locs, inverted.df[w] * TUPLE_SIZE,index_type=index_type)
     posting_list = []
     for i in range(inverted.df[w]):
       doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')

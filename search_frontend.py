@@ -142,17 +142,14 @@ def search_anchor():
         worst where each element is a tuple (wiki_id, title).
     '''
 
-    ##### for testing #######
-
-    w, itr = app.anchor_index.posting_lists_iter()
-    res = next(itr)
     #####
-
+    res=[]
     query = request.args.get('query', '')
     if len(query) == 0:
         return jsonify(res)
     # BEGIN SOLUTION
-
+    index_type = "_anchor"
+    res = app.anchor_index.read_posting_list("texas", index_type)
     # END SOLUTION
     return jsonify(res)
 
