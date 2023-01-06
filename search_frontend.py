@@ -32,9 +32,9 @@ class MyFlaskApp(Flask):
                     self.doc_id_title_dict = pickle.load(f)
         super(MyFlaskApp, self).run(host=host, port=port, debug=debug, **options)
 
+
 app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
-
 
 
 # CHANGEEEE
@@ -59,11 +59,12 @@ def search():
     res = []
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
+        return jsonify(res)
     # BEGIN SOLUTION
 
     # END SOLUTION
     return jsonify(res)
+
 
 @app.route("/search_body")
 def search_body():
@@ -84,11 +85,12 @@ def search_body():
     res = []
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
+        return jsonify(res)
     # BEGIN SOLUTION
 
     # END SOLUTION
     return jsonify(res)
+
 
 @app.route("/search_title")
 def search_title():
@@ -107,14 +109,19 @@ def search_title():
         list of ALL (not just top 100) search results, ordered from best to 
         worst where each element is a tuple (wiki_id, title).
     '''
+
+    # query=["hello world"] - > [(wiki_id, title)] sorted decreasing
+    # in a way that the title that contains most words of the query
+
     res = []
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
+        return jsonify(res)
     # BEGIN SOLUTION
 
     # END SOLUTION
     return jsonify(res)
+
 
 @app.route("/search_anchor")
 def search_anchor():
@@ -134,14 +141,21 @@ def search_anchor():
         list of ALL (not just top 100) search results, ordered from best to 
         worst where each element is a tuple (wiki_id, title).
     '''
-    res = []
+
+    ##### for testing #######
+
+    w, itr = app.anchor_index.posting_lists_iter()
+    res = next(itr)
+    #####
+
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
+        return jsonify(res)
     # BEGIN SOLUTION
-    
+
     # END SOLUTION
     return jsonify(res)
+
 
 @app.route("/get_pagerank", methods=['POST'])
 def get_pagerank():
@@ -162,11 +176,12 @@ def get_pagerank():
     res = []
     wiki_ids = request.get_json()
     if len(wiki_ids) == 0:
-      return jsonify(res)
+        return jsonify(res)
     # BEGIN SOLUTION
     res = [app.page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
     # END SOLUTION
     return jsonify(res)
+
 
 @app.route("/get_pageview", methods=['POST'])
 def get_pageview():
@@ -186,18 +201,18 @@ def get_pageview():
           list of page view numbers from August 2021 that correrspond to the 
           provided list article IDs.
     '''
+
     res = []
     wiki_ids = request.get_json()
     if len(wiki_ids) == 0:
-      return jsonify(res)
+        return jsonify(res)
     # BEGIN SOLUTION
     # res = [app.page_views_dict.get(doc_id, -1) for doc_id in wiki_ids]
-    res=["nada"]
+    res = ["nada"]
     # END SOLUTION
     return jsonify(res)
 
 
 if __name__ == '__main__':
-
     # run the Flask RESTful API, make the server publicly available (host='0.0.0.0') on port 8080
     app.run(host='0.0.0.0', port=8080, debug=True)
