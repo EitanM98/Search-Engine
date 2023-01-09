@@ -1,6 +1,11 @@
 import pickle
 from google.cloud import storage
 from flask import Flask, request, jsonify
+import nltk
+from nltk.stem.porter import *
+from nltk.corpus import stopwords
+import re
+
 
 
 class MyFlaskApp(Flask):
@@ -36,6 +41,14 @@ class MyFlaskApp(Flask):
 app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
+english_stopwords = frozenset(stopwords.words('english'))
+corpus_stopwords = ["category", "references", "also", "external", "links",
+                    "may", "first", "see", "history", "people", "one", "two",
+                    "part", "thumb", "including", "second", "following",
+                    "many", "however", "would", "became"]
+
+all_stopwords = english_stopwords.union(corpus_stopwords)
+RE_WORD = re.compile(r"""[\#\@\w](['\-]?\w){2,24}""", re.UNICODE)
 
 # CHANGEEEE
 @app.route("/search")
@@ -119,6 +132,15 @@ def search_title():
         return jsonify(res)
     # BEGIN SOLUTION
 
+    counter = {}
+    for token in tokenize(query):
+        for tup in app.title_index.read_posting_list(token):
+            if tup not in counter:
+                counter[tup] = 0
+            counter[tup] += 1
+
+    res = (sorted(counter.values(), reverse=True))
+
     # END SOLUTION
     return jsonify(res)
 
@@ -142,17 +164,21 @@ def search_anchor():
         worst where each element is a tuple (wiki_id, title).
     '''
 
-    ##### for testing #######
-
     res = []
-    #####
-
     query = request.args.get('query', '')
     if len(query) == 0:
         return jsonify(res)
     # BEGIN SOLUTION
-    index_type = "_anchor"
-    res = app.anchor_index.read_posting_list("texas", index_type)
+
+    counter = {}
+    for token in tokenize(query):
+        for tup in app.anchor_index_index.read_posting_list(token):
+            if tup not in counter:
+                counter[tup] = 0
+            counter[tup] += 1
+
+    res = (sorted(counter.values(), reverse=True))
+
     # END SOLUTION
     return jsonify(res)
 
@@ -178,6 +204,7 @@ def get_pagerank():
     if len(wiki_ids) == 0:
         return jsonify(res)
     # BEGIN SOLUTION
+
     res = [app.page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
     # END SOLUTION
     return jsonify(res)
@@ -207,10 +234,14 @@ def get_pageview():
     if len(wiki_ids) == 0:
         return jsonify(res)
     # BEGIN SOLUTION
-    # res = [app.page_views_dict.get(doc_id, -1) for doc_id in wiki_ids]
-    res = ["nada"]
+
+    res = [app.page_views_dict.get(doc_id, -1) for doc_id in wiki_ids]
+
     # END SOLUTION
     return jsonify(res)
+
+def tokenize(text):
+    return [token.group() for token in RE_WORD.finditer(text.lower())]
 
 
 if __name__ == '__main__':

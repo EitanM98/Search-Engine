@@ -95,12 +95,13 @@ TF_MASK = 2 ** 16 - 1 # Masking the 16 low bits of an integer
 
 
 class InvertedIndex:  
-    def __init__(self, docs={}):
+    def __init__(self, docs={}, index_type=""):
         """ Initializes the inverted index and add documents to it (if provided).
         Parameters:
         -----------
           docs: dict mapping doc_id to list of tokens
         """
+        self.index_type = index_type
         # stores document frequency per term
         self.df = Counter()
         # stores total frequency per term
@@ -204,5 +205,15 @@ class InvertedIndex:
         bucket = client.bucket(bucket_name)
         blob_posting_locs = bucket.blob(f"postings_gcp/{bucket_id}_posting_locs.pickle")
         blob_posting_locs.upload_from_filename(f"{bucket_id}_posting_locs.pickle")
-    
 
+
+    def read_posting_list(self, w):
+        with closing(MultiFileReader()) as reader:
+            locs = self.posting_locs[w]
+            b = reader.read(locs, self.df[w] * TUPLE_SIZE, index_type=self.index_type)
+            posting_list = []
+            for i in range(self.df[w]):
+                doc_id = int.from_bytes(b[i * TUPLE_SIZE:i * TUPLE_SIZE + 4], 'big')
+                tf = int.from_bytes(b[i * TUPLE_SIZE + 4:(i + 1) * TUPLE_SIZE], 'big')
+                posting_list.append((doc_id, tf))
+            return posting_list
