@@ -4,7 +4,7 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 import math
-import inverted_index_gcp
+import inverted_index_gcp_bucket
 # import inverted_index_colab
 
 
@@ -24,7 +24,7 @@ with open('small_index/test_title/title_index.pkl', 'rb') as f:
 TUPLE_SIZE = 6
 TF_MASK = 2 ** 16 - 1 # Masking the 16 low bits of an integer
 from contextlib import closing
-from inverted_index_gcp import MultiFileReader
+from inverted_index_gcp_bucket import MultiFileReader
 
 def read_posting_list(inverted, w, index_type=""):
   with closing(MultiFileReader()) as reader:
