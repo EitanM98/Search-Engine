@@ -2,10 +2,11 @@ import pickle
 from google.cloud import storage
 from flask import Flask, request, jsonify
 import nltk
-from nltk.stem.porter import *
+from nltk.stem.po   rter import *
 from nltk.corpus import stopwords
 import re
-
+from collections import Counter
+import math
 
 
 class MyFlaskApp(Flask):
@@ -101,8 +102,34 @@ def search_body():
         return jsonify(res)
     # BEGIN SOLUTION
 
+    similarity_dict = {}
+    tokens = tokenize(query)
+    for token in tokens:
+        for doc_tf in app.body_index.read_posting_list(token):
+            if doc_tf[0] not in similarity_dict:
+                similarity_dict[doc_tf[0]] = 0
+            similarity_dict[doc_tf[0]] += tf_idf_calc(token, doc_tf[0], doc_tf[1])
+
+    for doc in similarity_dict.keys():
+        similarity_dict[doc] = similarity_dict[doc]*normalize(tokens)*app.body_index.doc_norm_dict[doc]
+
     # END SOLUTION
     return jsonify(res)
+
+def normalize(tokens):
+    counter = Counter()
+    for token in tokens:
+        counter[token]+=1
+    norm = 0
+    for value in counter.values():
+        norm += value*value
+    return 1/(math.sqrt(norm))
+
+
+def tf_idf_calc (token, doc_id, tf):
+    tf =  tf/doc_len[doc_id]
+    idf = math.log(6348910/app.body_index.df[token], 2)
+    return tf*idf
 
 
 @app.route("/search_title")

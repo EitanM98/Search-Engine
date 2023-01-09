@@ -87,7 +87,7 @@ def generate_query_tfidf_vector(query_to_search, index):
     total_vocab_size = len(index.term_total)
     Q = np.zeros((total_vocab_size))
     term_vector = list(index.term_total.keys())
-    counter = Counter(query_to_search)
+    counter = Counter(query_to_search)     #TODO: tokenize the query
     for token in np.unique(query_to_search):
         if token in index.term_total.keys():  # avoid terms that do not appear in the index.
             tf = counter[token] / len(query_to_search)  # term frequency divded by the length of the query
