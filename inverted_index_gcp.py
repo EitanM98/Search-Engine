@@ -80,7 +80,7 @@ class MultiFileReader:
         # blob.upload_from_filename(file_name)
         for f_name, offset in locs:
             if f_name not in self._open_files:
-                blob = self.bucket.blob(f"postings_gcp{index_type}/{f_name}")
+                blob = self.bucket.get_blob(f"postings_gcp{index_type}/{f_name}")
                 self._open_files[f_name] = blob.open('rb')
             f = self._open_files[f_name]
             f.seek(offset)
