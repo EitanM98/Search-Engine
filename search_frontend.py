@@ -240,9 +240,14 @@ def get_pageview():
     # END SOLUTION
     return jsonify(res)
 
-def tokenize(text):
-    return [token.group() for token in RE_WORD.finditer(text.lower())]
+def tokenize_binary(text):
+    tokens = [token.group() for token in RE_WORD.finditer(text.lower())]
+    tokens = set(tok for tok in tokens if tok not in all_stopwords)
+    return tokens
 
+def tokenize(text):
+    tokens = [token.group() for token in RE_WORD.finditer(text.lower())]
+    return tokens
 
 if __name__ == '__main__':
     # run the Flask RESTful API, make the server publicly available (host='0.0.0.0') on port 8080
