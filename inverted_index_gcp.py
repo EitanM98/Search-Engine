@@ -65,11 +65,11 @@ class MultiFileReader:
     def __init__(self):
         self._open_files = {}
 
-    def read(self, locs, n_bytes, type_name=""):
+    def read(self, locs, n_bytes, bin_path=""):
         b = []
         for f_name, offset in locs:
             if f_name not in self._open_files:
-                self._open_files[f_name] = open(f"posting_gcp{type_name}/{f_name}", 'rb')
+                self._open_files[f_name] = open(f"{bin_path}/{f_name}", 'rb')
             f = self._open_files[f_name]
             f.seek(offset)
             n_read = min(n_bytes, BLOCK_SIZE - offset)
@@ -95,13 +95,13 @@ TF_MASK = 2 ** 16 - 1 # Masking the 16 low bits of an integer
 
 
 class InvertedIndex:  
-    def __init__(self, docs={}, index_type=""):
+    def __init__(self, docs={}, bin_path=""):
         """ Initializes the inverted index and add documents to it (if provided).
         Parameters:
         -----------
           docs: dict mapping doc_id to list of tokens
         """
-        self.index_type = index_type
+        self.bin_path = bin_path
         # stores document frequency per term
         self.df = Counter()
         # stores total frequency per term
@@ -151,13 +151,13 @@ class InvertedIndex:
         del state['_posting_list']
         return state
 
-    def posting_lists_iter(self, type_name):
+    def posting_lists_iter(self):
         """ A generator that reads one posting list from disk and yields 
             a (word:str, [(doc_id:int, tf:int), ...]) tuple.
         """
         with closing(MultiFileReader()) as reader:
             for w, locs in self.posting_locs.items():
-                b = reader.read(locs[0], self.df[w] * TUPLE_SIZE, type_name)
+                b = reader.read(locs[0], self.df[w] * TUPLE_SIZE, self.bin_path)
                 posting_list = []
                 for i in range(self.df[w]):
                     doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')
@@ -210,7 +210,7 @@ class InvertedIndex:
     def read_posting_list(self, w):
         with closing(MultiFileReader()) as reader:
             locs = self.posting_locs[w]
-            b = reader.read(locs, self.df[w] * TUPLE_SIZE, index_type=self.index_type)
+            b = reader.read(locs, self.df[w] * TUPLE_SIZE, bin_path=self.bin_path)
             posting_list = []
             for i in range(self.df[w]):
                 doc_id = int.from_bytes(b[i * TUPLE_SIZE:i * TUPLE_SIZE + 4], 'big')
