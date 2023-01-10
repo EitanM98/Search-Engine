@@ -76,9 +76,69 @@ def search():
         return jsonify(res)
     # BEGIN SOLUTION
 
+    similarity_dict = {}
+
+    tokens = tokenize(query)
+    # word2vec
+    # Constants
+    BODY_WEIGHT = 0.3
+    ANCHOR_WEIGHT = 0.35
+    TITLE_WEIGHT = 0.35
+    token_doc_titles_occurrences = Counter()
+    token_doc_anchor_occurrences = Counter()
+
+    for token in tokens:
+        # Searching the term in anchor index
+        for doc_tf in app.anchor_index.read_posting_list(token):
+            token_doc_anchor_occurrences[doc_tf[0]] = 1 + token_doc_anchor_occurrences.get(doc_tf[0], 0)
+
+        # Searching the term in title index
+        for doc_tf in app.title_index.read_posting_list(token):
+            token_doc_titles_occurrences[doc_tf[0]] = 1 + token_doc_titles_occurrences.get(doc_tf[0], 0)
+
+        # Searching the term in body index
+        for doc_tf in app.body_index.read_posting_list(token):
+            if doc_tf[0] not in similarity_dict.keys():
+                similarity_dict[doc_tf[0]] = 0
+
+            a = token_doc_anchor_occurrences.get(doc_tf[0], 0) * ANCHOR_WEIGHT
+            b = token_doc_titles_occurrences.get(doc_tf[0], 0) * TITLE_WEIGHT
+            c = bm25_update(token, doc_tf[0], doc_tf[1]) * BODY_WEIGHT
+            update =  a + b + c
+            similarity_dict[doc_tf[0]] += update
+
+
+    for doc in similarity_dict.keys():
+        similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * app.body_index.doc_norm_dict[doc]
+
     # END SOLUTION
     return jsonify(res)
 
+
+def bm25_update(token, doc_id, tf):
+    k1 = 1.5
+    B = 0.75
+    N = 6348910
+    avgl = 319.5242353411845
+    idf = math.log(((N - app.body_index.df[token] + 0.5)/(app.body_index.df[token]+0.5)) + 1, math.e)
+    score = (idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - B + B * (DL[doc_id] / avgl)))))
+    return score
+
+
+def normalize(tokens):
+    counter = Counter()
+    for token in tokens:
+        counter[token] += 1
+    norm = 0
+    for value in counter.values():
+        norm += value * value
+    return 1 / (math.sqrt(norm))
+
+
+def tf_idf_calc(token, doc_id, tf):
+    tf = tf / doc_len[doc_id]
+    idf = math.log(6348910 / app.body_index.df[token], 2)
+    return tf * idf
 
 @app.route("/search_body")
 def search_body():
@@ -116,20 +176,6 @@ def search_body():
     # END SOLUTION
     return jsonify(res)
 
-def normalize(tokens):
-    counter = Counter()
-    for token in tokens:
-        counter[token]+=1
-    norm = 0
-    for value in counter.values():
-        norm += value*value
-    return 1/(math.sqrt(norm))
-
-
-def tf_idf_calc (token, doc_id, tf):
-    tf =  tf/doc_len[doc_id]
-    idf = math.log(6348910/app.body_index.df[token], 2)
-    return tf*idf
 
 
 @app.route("/search_title")
