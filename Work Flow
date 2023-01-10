@@ -1,5 +1,2 @@
 To do:
-Dictionaries:
-* id-title
-* id - doc len
-*
+* id - doc len - remove stopwords before creating the  dictionary
