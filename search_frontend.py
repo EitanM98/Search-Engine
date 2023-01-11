@@ -109,12 +109,16 @@ def search():
             d = page_rank_dict[doc_tf[0]] * PAGE_RANK_WEIGHT
             e = page_view_dict[doc_tf[0]] * PAGE_VIEW_WEIGHT
 
-            update =  a + b + c
+            update =  a + b + c + d + e
             similarity_dict[doc_tf[0]] += update
 
 
-    for doc in similarity_dict.keys():
-        similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * app.body_index.doc_norm_dict[doc]
+    # for doc in similarity_dict.keys():
+    #     similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * app.body_index.doc_norm_dict[doc]
+    top100 = list(sorted(similarity_dict.items(), key=lambda item: item[1], reverse=True)[:100])
+
+    for pair in top100:
+        res.append((pair[0], doc_title_dict[pair[0]]))
 
     # END SOLUTION
     return jsonify(res)
