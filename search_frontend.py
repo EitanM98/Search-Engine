@@ -84,6 +84,8 @@ def search():
     BODY_WEIGHT = 0.3
     ANCHOR_WEIGHT = 0.35
     TITLE_WEIGHT = 0.35
+    PAGE_RANK_WEIGHT = 0.35
+    PAGE_VIEW_WEIGHT = 0.35
     token_doc_titles_occurrences = Counter()
     token_doc_anchor_occurrences = Counter()
 
@@ -104,6 +106,9 @@ def search():
             a = token_doc_anchor_occurrences.get(doc_tf[0], 0) * ANCHOR_WEIGHT
             b = token_doc_titles_occurrences.get(doc_tf[0], 0) * TITLE_WEIGHT
             c = bm25_update(token, doc_tf[0], doc_tf[1]) * BODY_WEIGHT
+            d = page_rank_dict[doc_tf[0]] * PAGE_RANK_WEIGHT
+            e = page_view_dict[doc_tf[0]] * PAGE_VIEW_WEIGHT
+
             update =  a + b + c
             similarity_dict[doc_tf[0]] += update
 
