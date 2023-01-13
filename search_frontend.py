@@ -9,64 +9,62 @@ import math
 import collections
 import json
 from inverted_index_gcp import *
+nltk.download('stopwords')
 
 
 class MyFlaskApp(Flask):
     def run(self, host=None, port=None, debug=None, **options):
-        # Initializations
-
-        # Reading the indexes
-        self.body_index = InvertedIndex.read_index('.', "body_index")
-        self.anchor_index = InvertedIndex.read_index('.', "anchor_index")
-        self.title_index = InvertedIndex.read_index('.', "title_index")
-
-        # Paths to .bin files
-        path_anchor = "/content/postings_gcp_anchor"
-        path_body = "/content/postings_gcp_body"
-        path_title = "/content/postings_gcp_title"
-
-        self.body_index.bin_path = path_body
-        self.anchor_index.bin_path = path_anchor
-        self.title_index.bin_path = path_title
-
-        # Loading the dictionaries
-        with open('doc_id_title_dict.pickle', 'rb') as f:
-            self.doc_title_dict = pickle.load(f)
-
-        with open('doc_len_dict.pickle', 'rb') as f:
-            self.doc_len_dict = pickle.load(f)
-
-        with open('page_views_dict.pkl', 'rb') as f:
-            self.page_views_dict = pickle.load(f)
-
-        with open('page_rank_dict.pickle', 'rb') as f:
-            self.page_rank_dict = pickle.load(f)
-
-        with open('doc_norm_dict.pickle', 'rb') as f:
-            self.doc_norm_dict = pickle.load(f)
-
-        with open('query_expansion_dict.pickle', 'rt') as f:
-            self.query_expansion_dict = pickle.load(f)
-
         super(MyFlaskApp, self).run(host=host, port=port, debug=debug, **options)
+
 
 
 app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
-# Global variables
-english_stopwords = frozenset(stopwords.words('english'))
-corpus_stopwords = ["category", "references", "also", "external", "links",
-                    "may", "first", "see", "history", "people", "one", "two",
-                    "part", "thumb", "including", "second", "following",
-                    "many", "however", "would", "became"]
+# Initializations
 
-all_stopwords = english_stopwords.union(corpus_stopwords)
-RE_WORD = re.compile(r"""[\#\@\w](['\-]?\w){2,24}""", re.UNICODE)
+# Reading the indexes
+# global body_index
+# global anchor_index
+# global title_index
+body_index = InvertedIndex.read_index('.', "body_index")
+anchor_index = InvertedIndex.read_index('.', "anchor_index")
+title_index = InvertedIndex.read_index('.', "title_index")
 
-N = 6348910
-page_rank_max = max(app.page_rank_dict.values())
-page_views_max = max(app.page_views_dict.values())
+# Paths to .bin files
+path_anchor = "/content/postings_gcp_anchor"
+path_body = "/content/postings_gcp_body"
+path_title = "/content/postings_gcp_title"
+
+body_index.bin_path = path_body
+anchor_index.bin_path = path_anchor
+title_index.bin_path = path_title
+
+
+# Loading the dictionaries
+with open('doc_id_title_dict.pickle', 'rb') as f:
+    # global doc_title_dict
+    doc_title_dict = pickle.load(f)
+
+with open('doc_len_dict.pickle', 'rb') as f:
+    # global doc_len_dict
+    doc_len_dict = pickle.load(f)
+
+with open('page_views_dict.pkl', 'rb') as f:
+    # global page_views_dict
+    page_views_dict = pickle.load(f)
+
+with open('page_rank_dict.pickle', 'rb') as f:
+    # global page_rank_dict
+    page_rank_dict = pickle.load(f)
+
+with open('doc_norm_dict.pickle', 'rb') as f:
+    # global doc_norm_dict
+    doc_norm_dict = pickle.load(f)
+
+with open('query_expansion_dict.pickle', 'rb') as f:
+    # global query_expansion_dict
+    query_expansion_dict = pickle.load(f)
 
 
 @app.route("/search")
@@ -93,43 +91,39 @@ def search():
         return jsonify(res)
 
     # BEGIN SOLUTION
-
     similarity_dict = {}
 
     # Constants
     weights = [0.55754871, 1.25785412, 0.54434859, 0.09795087, 0.38754463]
     BODY_WEIGHT, ANCHOR_WEIGHT, TITLE_WEIGHT, PAGE_RANK_WEIGHT, PAGE_VIEW_WEIGHT = weights
 
-    token_doc_titles_occurrences = Counter()
-    token_doc_anchor_occurrences = Counter()
-
     # Tokenizing the query
     tokens = tokenize(query)
 
     # TODO:Query expansion
     for token in tokens:
+
         # Searching the term in anchor index
-        for doc_tf in app.anchor_index.read_posting_list(token):
-            token_doc_anchor_occurrences[doc_tf[0]] = 1 + token_doc_anchor_occurrences.get(doc_tf[0], 0)
+        if anchor_index.df.get(token, 0) != 0:
+            for doc_tf in app.anchor_index.read_posting_list(token):
+                # token_doc_anchor_occurrences[doc_tf[0]] = 1 + token_doc_anchor_occurrences.get(doc_tf[0], 0)
+                similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + ANCHOR_WEIGHT
 
         # Searching the term in title index
-        for doc_tf in app.title_index.read_posting_list(token):
-            token_doc_titles_occurrences[doc_tf[0]] = 1 + token_doc_titles_occurrences.get(doc_tf[0], 0)
+        if title_index.df.get(token, 0) != 0:
+            for doc_tf in app.title_index.read_posting_list(token):
+                similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + TITLE_WEIGHT
 
         # Searching the term in body index
-        for doc_tf in app.body_index.read_posting_list(token):
-            if doc_tf[0] not in similarity_dict.keys():
-                similarity_dict[doc_tf[0]] = 0
+        if body_index.df.get(token, 0) != 0:
+            for doc_tf in app.body_index.read_posting_list(token):
+                c = bm25_update(token, doc_tf[0], doc_tf[1]) * BODY_WEIGHT
+                similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + c
 
-            # Calculating the summation of the similarities
-            a = token_doc_anchor_occurrences.get(doc_tf[0], 0) * ANCHOR_WEIGHT
-            b = token_doc_titles_occurrences.get(doc_tf[0], 0) * TITLE_WEIGHT
-            c = bm25_update(token, doc_tf[0], doc_tf[1]) * BODY_WEIGHT
-            d = app.page_rank_dict.get(doc_tf[0], 0) / page_rank_max * PAGE_RANK_WEIGHT
-            e = app.page_views_dict.get(doc_tf[0], 0) / page_views_max * PAGE_VIEW_WEIGHT
-
-            update = a + b + c + d + e
-            similarity_dict[doc_tf[0]] += update
+        # Adding page_rank and page_views of each relevant document
+        for doc_id in similarity_dict.keys():
+            similarity_dict[doc_id] += app.page_rank_dict.get(doc_id, 0) / page_rank_max * PAGE_RANK_WEIGHT
+            similarity_dict[doc_id] += app.page_views_dict.get(doc_id, 0) / page_views_max * PAGE_VIEW_WEIGHT
 
     top_n_results(similarity_dict, res, 100)
 
@@ -162,13 +156,13 @@ def search_body():
     similarity_dict = {}
     tokens = tokenize(query)
     for token in tokens:
-        for doc_tf in app.body_index.read_posting_list(token):
+        for doc_tf in body_index.read_posting_list(token):
             if doc_tf[0] not in similarity_dict:
                 similarity_dict[doc_tf[0]] = 0
             similarity_dict[doc_tf[0]] += tf_idf_calc(token, doc_tf[0], doc_tf[1])
 
     for doc in similarity_dict.keys():
-        similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * app.body_index.doc_norm_dict[doc]
+        similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * doc_norm_dict[doc]
 
     top_n_results(similarity_dict, res, 100)
 
@@ -206,9 +200,9 @@ def search_title():
 
     counter = collections.Counter()
     for token in tokenize(query):
-        for doc_id_tf in app.title_index.read_posting_list(token):
+        for doc_id_tf in title_index.read_posting_list(token):
             doc_id = doc_id_tf[0]
-            title = app.doc_title_dict[doc_id]
+            title = doc_title_dict[doc_id]
             counter[(doc_id, title)] += 1
 
     res = list(map(lambda tup: tup[0], counter.most_common()))
@@ -244,9 +238,9 @@ def search_anchor():
 
     counter = collections.Counter()
     for token in tokenize(query):
-        for doc_id_tf in app.anchor_index.read_posting_list(token):
+        for doc_id_tf in anchor_index.read_posting_list(token):
             doc_id = doc_id_tf[0]
-            title = app.doc_title_dict[doc_id]
+            title = doc_title_dict[doc_id]
             counter[(doc_id, title)] += 1
 
     res = list(map(lambda tup: tup[0], counter.most_common()))
@@ -278,7 +272,7 @@ def get_pagerank():
     # BEGIN SOLUTION
 
     # TODO: check the forum for the answer
-    res = [app.page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
+    res = [page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
     res = list(filter(lambda x: x != -1, res))
     # END SOLUTION
     return jsonify(res)
@@ -309,11 +303,25 @@ def get_pageview():
         return jsonify(res)
     # BEGIN SOLUTION
 
-    res = [app.page_views_dict.get(doc_id, -1) for doc_id in wiki_ids]
+    res = [page_views_dict.get(doc_id, -1) for doc_id in wiki_ids]
     res = list(filter(lambda x: x != -1, res))
 
     # END SOLUTION
     return jsonify(res)
+
+# Global variables
+english_stopwords = frozenset(stopwords.words('english'))
+corpus_stopwords = ["category", "references", "also", "external", "links",
+                    "may", "first", "see", "history", "people", "one", "two",
+                    "part", "thumb", "including", "second", "following",
+                    "many", "however", "would", "became"]
+
+all_stopwords = english_stopwords.union(corpus_stopwords)
+RE_WORD = re.compile(r"""[\#\@\w](['\-]?\w){2,24}""", re.UNICODE)
+
+N = 6348910
+page_rank_max = max(page_rank_dict.values())
+page_views_max = max(page_views_dict.values())
 
 
 # Helping functions
@@ -323,7 +331,7 @@ def top_n_results(similarity_dict, res, n=100):
     top100 = list(sorted(similarity_dict.items(), key=lambda item: item[1], reverse=True)[:res_size])
     # Returning the top up to 100 tuples -> (ID, Tittle)
     for pair in top100:
-        res.append((pair[0], app.doc_title_dict[pair[0]]))
+        res.append((pair[0], doc_title_dict[pair[0]]))
 
 
 def tokenize_binary(text):
@@ -350,9 +358,9 @@ def normalize(tokens):
 
 
 def tf_idf_calc(token, doc_id, tf):
-    tf = tf / app.doc_len_dict[doc_id]
-    #     idf = math.log(N/app.body_index.df[token], 2)
-    idf = math.log(N / app.body_index.df[token], 2)
+    tf = tf / doc_len_dict[doc_id]
+    #     idf = math.log(N/body_index.df[token], 2)
+    idf = math.log(N / body_index.df[token], 2)
     return tf * idf
 
 
@@ -361,12 +369,12 @@ def bm25_update(token, doc_id, tf):
     B = 0.75
     N = 6348910
     avgl = 319.5242353411845
-    idf = math.log(((N - app.body_index.df[token] + 0.5) / (app.body_index.df[token] + 0.5)) + 1, math.e)
-    score = (idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - B + B * (app.doc_len_dict[doc_id] / avgl)))))
+    idf = math.log(((N - body_index.df[token] + 0.5) / (body_index.df[token] + 0.5)) + 1, math.e)
+    score = (idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - B + B * (doc_len_dict[doc_id] / avgl)))))
     return score
 
 
-def query_expansion(query):
+# def query_expansion(query):
 
 
 if __name__ == '__main__':

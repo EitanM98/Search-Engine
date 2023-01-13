@@ -217,14 +217,14 @@ class InvertedIndex:
         blob_posting_locs = bucket.blob(f"postings_gcp{index_type}/{bucket_id}_posting_locs.pickle")
         blob_posting_locs.upload_from_filename(f"{bucket_id}_posting_locs.pickle")
 
-    def read_posting_list(self, w, index_type=""):
-        with closing(MultiFileReader()) as reader:
-            locs = self.posting_locs[w]
-            b = reader.read(locs, self.df[w] * TUPLE_SIZE, index_type=index_type)
-            posting_list = []
-            for i in range(self.df[w]):
-                doc_id = int.from_bytes(b[i * TUPLE_SIZE:i * TUPLE_SIZE + 4], 'big')
-                tf = int.from_bytes(b[i * TUPLE_SIZE + 4:(i + 1) * TUPLE_SIZE], 'big')
-                posting_list.append((doc_id, tf))
-            return posting_list
+    # def read_posting_list(self, w, index_type=""):
+    #     with closing(MultiFileReader()) as reader:
+    #         locs = self.posting_locs[w]
+    #         b = reader.read(locs, self.df[w] * TUPLE_SIZE, index_type=index_type)
+    #         posting_list = []
+    #         for i in range(self.df[w]):
+    #             doc_id = int.from_bytes(b[i * TUPLE_SIZE:i * TUPLE_SIZE + 4], 'big')
+    #             tf = int.from_bytes(b[i * TUPLE_SIZE + 4:(i + 1) * TUPLE_SIZE], 'big')
+    #             posting_list.append((doc_id, tf))
+    #         return posting_list
 
