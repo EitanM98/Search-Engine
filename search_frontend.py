@@ -99,31 +99,41 @@ def search():
 
     # Tokenizing the query
     tokens = tokenize(query)
-
-    # TODO:Query expansion
+    # tokenized_query = tokenize(query)
+    # q_len = len(tokenized_query)
+    # expand_factor = 0
+    # if q_len == 0:
+    #     return jsonify(res)
+    # if q_len == 1:
+    #     expand_factor = 2
+    # elif q_len == 2 or q_len == 3:
+    #     expand_factor = 1
+    # else:
+    #     expand_factor = 0
+    # tokens = query_expansion(tokenized_query, expand_factor)
     for token in tokens:
 
         # Searching the term in anchor index
-        if anchor_index.df.get(token, 0) != 0:
-            for doc_tf in app.anchor_index.read_posting_list(token):
+        if anchor_index.df.get(token, None):
+            for doc_tf in anchor_index.read_posting_list(token):
                 # token_doc_anchor_occurrences[doc_tf[0]] = 1 + token_doc_anchor_occurrences.get(doc_tf[0], 0)
                 similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + ANCHOR_WEIGHT
 
         # Searching the term in title index
-        if title_index.df.get(token, 0) != 0:
-            for doc_tf in app.title_index.read_posting_list(token):
+        if title_index.df.get(token, None):
+            for doc_tf in title_index.read_posting_list(token):
                 similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + TITLE_WEIGHT
 
         # Searching the term in body index
-        if body_index.df.get(token, 0) != 0:
-            for doc_tf in app.body_index.read_posting_list(token):
+        if body_index.df.get(token, None):
+            for doc_tf in body_index.read_posting_list(token):
                 c = bm25_update(token, doc_tf[0], doc_tf[1]) * BODY_WEIGHT
                 similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + c
 
         # Adding page_rank and page_views of each relevant document
         for doc_id in similarity_dict.keys():
-            similarity_dict[doc_id] += app.page_rank_dict.get(doc_id, 0) / page_rank_max * PAGE_RANK_WEIGHT
-            similarity_dict[doc_id] += app.page_views_dict.get(doc_id, 0) / page_views_max * PAGE_VIEW_WEIGHT
+            similarity_dict[doc_id] += page_rank_dict.get(doc_id, 0) / page_rank_max * PAGE_RANK_WEIGHT
+            similarity_dict[doc_id] += page_views_dict.get(doc_id, 0) / page_views_max * PAGE_VIEW_WEIGHT
 
     top_n_results(similarity_dict, res, 100)
 
@@ -156,10 +166,11 @@ def search_body():
     similarity_dict = {}
     tokens = tokenize(query)
     for token in tokens:
-        for doc_tf in body_index.read_posting_list(token):
-            if doc_tf[0] not in similarity_dict:
-                similarity_dict[doc_tf[0]] = 0
-            similarity_dict[doc_tf[0]] += tf_idf_calc(token, doc_tf[0], doc_tf[1])
+        if body_index.df.get(token, None):
+            for doc_tf in body_index.read_posting_list(token):
+                if doc_tf[0] not in similarity_dict:
+                    similarity_dict[doc_tf[0]] = 0
+                similarity_dict[doc_tf[0]] += tf_idf_calc(token, doc_tf[0], doc_tf[1])
 
     for doc in similarity_dict.keys():
         similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * doc_norm_dict[doc]
@@ -200,10 +211,11 @@ def search_title():
 
     counter = collections.Counter()
     for token in tokenize(query):
-        for doc_id_tf in title_index.read_posting_list(token):
-            doc_id = doc_id_tf[0]
-            title = doc_title_dict[doc_id]
-            counter[(doc_id, title)] += 1
+        if title_index.df.get(token, None):
+            for doc_id_tf in title_index.read_posting_list(token):
+                doc_id = doc_id_tf[0]
+                title = doc_title_dict[doc_id]
+                counter[(doc_id, title)] += 1
 
     res = list(map(lambda tup: tup[0], counter.most_common()))
 
@@ -238,10 +250,11 @@ def search_anchor():
 
     counter = collections.Counter()
     for token in tokenize(query):
-        for doc_id_tf in anchor_index.read_posting_list(token):
-            doc_id = doc_id_tf[0]
-            title = doc_title_dict[doc_id]
-            counter[(doc_id, title)] += 1
+        if anchor_index.df.get(token, None):
+            for doc_id_tf in anchor_index.read_posting_list(token):
+                doc_id = doc_id_tf[0]
+                title = doc_title_dict[doc_id]
+                counter[(doc_id, title)] += 1
 
     res = list(map(lambda tup: tup[0], counter.most_common()))
 
@@ -365,7 +378,7 @@ def tf_idf_calc(token, doc_id, tf):
 
 
 def bm25_update(token, doc_id, tf):
-    k1 = 1.5
+    k1 = 1.2
     B = 0.75
     N = 6348910
     avgl = 319.5242353411845
@@ -374,6 +387,25 @@ def bm25_update(token, doc_id, tf):
     return score
 
 
+def query_expansion(tokenized_query, k):
+    if k <= 0:
+        return tokenized_query
+    # tokenized_query = tokenize(query)
+    expansion_list = []
+    for token in tokenized_query:
+        token_expansion = query_expansion_dict.get(token, None)
+        tmp = k
+        if not token_expansion:
+            continue
+        for i in range(len(token_expansion)):
+            if tmp <= 0:
+                break
+            expansion_list.append(token_expansion[i][1])
+            tmp -= 1
+
+    tokenized_query.update(expansion_list)
+    return tokenized_query
+#
 # def query_expansion(query):
 
 
