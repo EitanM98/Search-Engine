@@ -16,7 +16,6 @@ from inverted_index_gcp import *
 
 class MyFlaskApp(Flask):
     def run(self, host=None, port=None, debug=None, **options):
-
         # Initializations
 
         # Reading the indexes
@@ -32,7 +31,6 @@ class MyFlaskApp(Flask):
         self.body_index.bin_path = path_body
         self.anchor_index.bin_path = path_anchor
         self.title_index.bin_path = path_title
-
 
         # Loading the dictionaries
         with open('doc_id_title_dict.pickle', 'rb') as f:
@@ -53,7 +51,6 @@ class MyFlaskApp(Flask):
         with open('query_expansion_dict.pickle', 'rt') as f:
             self.query_expansion_dict = pickle.load(f)
 
-
         super(MyFlaskApp, self).run(host=host, port=port, debug=debug, **options)
 
 
@@ -73,6 +70,7 @@ RE_WORD = re.compile(r"""[\#\@\w](['\-]?\w){2,24}""", re.UNICODE)
 N = 6348910
 page_rank_max = max(app.page_rank_dict.values())
 page_views_max = max(app.page_views_dict.values())
+
 
 @app.route("/search")
 def search():
@@ -105,13 +103,11 @@ def search():
     weights = [0.55754871, 1.25785412, 0.54434859, 0.09795087, 0.38754463]
     BODY_WEIGHT, ANCHOR_WEIGHT, TITLE_WEIGHT, PAGE_RANK_WEIGHT, PAGE_VIEW_WEIGHT = weights
 
-
     token_doc_titles_occurrences = Counter()
     token_doc_anchor_occurrences = Counter()
 
     # Tokenizing the query
     tokens = tokenize(query)
-
 
     # TODO:Query expansion
     for token in tokens:
@@ -128,15 +124,14 @@ def search():
             if doc_tf[0] not in similarity_dict.keys():
                 similarity_dict[doc_tf[0]] = 0
 
-
             # Calculating the summation of the similarities
             a = token_doc_anchor_occurrences.get(doc_tf[0], 0) * ANCHOR_WEIGHT
             b = token_doc_titles_occurrences.get(doc_tf[0], 0) * TITLE_WEIGHT
             c = bm25_update(token, doc_tf[0], doc_tf[1]) * BODY_WEIGHT
-            d = app.page_rank_dict.get(doc_tf[0], 0)/page_rank_max * PAGE_RANK_WEIGHT
-            e = app.page_views_dict.get(doc_tf[0], 0)/page_views_max * PAGE_VIEW_WEIGHT
+            d = app.page_rank_dict.get(doc_tf[0], 0) / page_rank_max * PAGE_RANK_WEIGHT
+            e = app.page_views_dict.get(doc_tf[0], 0) / page_views_max * PAGE_VIEW_WEIGHT
 
-            update =  a + b + c + d + e
+            update = a + b + c + d + e
             similarity_dict[doc_tf[0]] += update
 
     # Top up to 100
@@ -181,7 +176,7 @@ def search_body():
             similarity_dict[doc_tf[0]] += tf_idf_calc(token, doc_tf[0], doc_tf[1])
 
     for doc in similarity_dict.keys():
-        similarity_dict[doc] = similarity_dict[doc]*normalize(tokens)*app.body_index.doc_norm_dict[doc]
+        similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * app.body_index.doc_norm_dict[doc]
 
     # Top up to 100 TODO: FIX [:100]
     top100 = list(sorted(similarity_dict.items(), key=lambda item: item[1], reverse=True)[:100])
@@ -192,7 +187,6 @@ def search_body():
 
     # END SOLUTION
     return jsonify(res)
-
 
 
 @app.route("/search_title")
@@ -234,6 +228,7 @@ def search_title():
     # END SOLUTION
     return jsonify(res)
 
+
 # TODO: CONTINUE FROM HERE
 
 @app.route("/search_anchor")
@@ -261,14 +256,14 @@ def search_anchor():
         return jsonify(res)
     # BEGIN SOLUTION
 
-    counter = {}
+    counter = collections.Counter()
     for token in tokenize(query):
-        for tup in app.anchor_index_index.read_posting_list(token):
-            if tup not in counter:
-                counter[tup] = 0
-            counter[tup] += 1
+        for doc_id_tf in app.anchor_index.read_posting_list(token):
+            doc_id = doc_id_tf[0]
+            title = app.doc_title_dict[doc_id]
+            counter[(doc_id, title)] += 1
 
-    res = (sorted(counter.values(), reverse=True))
+    res = list(map(lambda tup: tup[0], counter.most_common()))
 
     # END SOLUTION
     return jsonify(res)
@@ -296,7 +291,9 @@ def get_pagerank():
         return jsonify(res)
     # BEGIN SOLUTION
 
+    # TODO: ask weeather to return -1 or smaller list
     res = [app.page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
+    res = list(filter(lambda x: x != -1, res))
     # END SOLUTION
     return jsonify(res)
 
@@ -327,6 +324,7 @@ def get_pageview():
     # BEGIN SOLUTION
 
     res = [app.page_views_dict.get(doc_id, -1) for doc_id in wiki_ids]
+    res = list(filter(lambda x: x != -1, res))
 
     # END SOLUTION
     return jsonify(res)
@@ -339,6 +337,7 @@ def tokenize_binary(text):
     tokens = set(tok for tok in tokens if tok not in all_stopwords)
     return tokens
 
+
 def tokenize(text):
     tokens = [token.group() for token in RE_WORD.finditer(text.lower())]
     return tokens
@@ -348,32 +347,29 @@ def normalize(tokens):
     counter = Counter(tokens)
     norm = 0
     for value in counter.values():
-        norm += value*value
-    if norm == 0 :
+        norm += value * value
+    if norm == 0:
         return 0
-    return 1/(math.sqrt(norm))
+    return 1 / (math.sqrt(norm))
 
 
-def tf_idf_calc (token, doc_id, tf):
-    tf =  tf/doc_len_dict[doc_id]
-#     idf = math.log(N/app.body_index.df[token], 2)
-    idf = math.log(N/body_index.df[token], 2)
-    return tf*idf
+def tf_idf_calc(token, doc_id, tf):
+    tf = tf / app.doc_len_dict[doc_id]
+    #     idf = math.log(N/app.body_index.df[token], 2)
+    idf = math.log(N / app.body_index.df[token], 2)
+    return tf * idf
+
 
 def bm25_update(token, doc_id, tf):
     k1 = 1.5
     B = 0.75
     N = 6348910
     avgl = 319.5242353411845
-    idf = math.log(((N - body_index.df[token] + 0.5)/(body_index.df[token]+0.5)) + 1, math.e)
-    score = (idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - B + B * (doc_len_dict[doc_id] / avgl)))))
+    idf = math.log(((N - app.body_index.df[token] + 0.5) / (app.body_index.df[token] + 0.5)) + 1, math.e)
+    score = (idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - B + B * (app.doc_len_dict[doc_id] / avgl)))))
     return score
+
 
 if __name__ == '__main__':
     # run the Flask RESTful API, make the server publicly available (host='0.0.0.0') on port 8080
     app.run(host='0.0.0.0', port=8080, debug=True)
-
-
-
-
-
