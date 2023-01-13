@@ -7,10 +7,7 @@ import re
 from collections import Counter
 import math
 import collections
-import csv
-import gzip
 import json
-import fasttext
 from inverted_index_gcp import *
 
 
@@ -134,12 +131,7 @@ def search():
             update = a + b + c + d + e
             similarity_dict[doc_tf[0]] += update
 
-    # Top up to 100
-    top100 = list(sorted(similarity_dict.items(), key=lambda item: item[1], reverse=True)[:100])
-
-    # Returning the top up to 100 tuples -> (ID, Tittle)
-    for pair in top100:
-        res.append((pair[0], app.doc_title_dict[pair[0]]))
+    top_n_results(similarity_dict, res, 100)
 
     # END SOLUTION
     return jsonify(res)
@@ -178,15 +170,11 @@ def search_body():
     for doc in similarity_dict.keys():
         similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * app.body_index.doc_norm_dict[doc]
 
-    # Top up to 100 TODO: FIX [:100]
-    top100 = list(sorted(similarity_dict.items(), key=lambda item: item[1], reverse=True)[:100])
-
-    # Returning the top up to 100 tuples -> (ID, Tittle)
-    for pair in top100:
-        res.append((pair[0], app.doc_title_dict[pair[0]]))
+    top_n_results(similarity_dict, res, 100)
 
     # END SOLUTION
     return jsonify(res)
+
 
 
 @app.route("/search_title")
@@ -228,8 +216,6 @@ def search_title():
     # END SOLUTION
     return jsonify(res)
 
-
-# TODO: CONTINUE FROM HERE
 
 @app.route("/search_anchor")
 def search_anchor():
@@ -331,6 +317,14 @@ def get_pageview():
 
 
 # Helping functions
+def top_n_results(similarity_dict, res, n=100):
+    # Top up to 100
+    res_size = min(n, len(similarity_dict.keys()))
+    top100 = list(sorted(similarity_dict.items(), key=lambda item: item[1], reverse=True)[:res_size])
+    # Returning the top up to 100 tuples -> (ID, Tittle)
+    for pair in top100:
+        res.append((pair[0], app.doc_title_dict[pair[0]]))
+
 
 def tokenize_binary(text):
     tokens = [token.group() for token in RE_WORD.finditer(text.lower())]
