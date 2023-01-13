@@ -277,7 +277,7 @@ def get_pagerank():
         return jsonify(res)
     # BEGIN SOLUTION
 
-    # TODO: ask weeather to return -1 or smaller list
+    # TODO: check the forum for the answer
     res = [app.page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
     res = list(filter(lambda x: x != -1, res))
     # END SOLUTION
@@ -334,6 +334,8 @@ def tokenize_binary(text):
 
 def tokenize(text):
     tokens = [token.group() for token in RE_WORD.finditer(text.lower())]
+    tokens = set(tok for tok in tokens if tok not in all_stopwords)
+    # tokens = list(tok for tok in tokens if tok not in all_stopwords) TODO: check for list or set
     return tokens
 
 
@@ -362,6 +364,9 @@ def bm25_update(token, doc_id, tf):
     idf = math.log(((N - app.body_index.df[token] + 0.5) / (app.body_index.df[token] + 0.5)) + 1, math.e)
     score = (idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - B + B * (app.doc_len_dict[doc_id] / avgl)))))
     return score
+
+
+def query_expansion(query):
 
 
 if __name__ == '__main__':
