@@ -11,6 +11,9 @@ import json
 from inverted_index_gcp import *
 nltk.download('stopwords')
 
+#TODO: Remove this later
+import requests
+from time import time
 
 class MyFlaskApp(Flask):
     def run(self, host=None, port=None, debug=None, **options):
@@ -32,9 +35,12 @@ anchor_index = InvertedIndex.read_index('.', "anchor_index")
 title_index = InvertedIndex.read_index('.', "title_index")
 
 # Paths to .bin files
-path_anchor = "/content/postings_gcp_anchor"
-path_body = "/content/postings_gcp_body"
-path_title = "/content/postings_gcp_title"
+# path_anchor = "/content/postings_gcp_anchor"
+# path_body = "/content/postings_gcp_body"
+# path_title = "/content/postings_gcp_title"
+path_anchor = "postings_gcp_anchor"
+path_body = "postings_gcp_body"
+path_title = "postings_gcp_title"
 
 body_index.bin_path = path_body
 anchor_index.bin_path = path_anchor
@@ -66,6 +72,7 @@ with open('query_expansion_dict.pickle', 'rb') as f:
     # global query_expansion_dict
     query_expansion_dict = pickle.load(f)
 
+print("All files loaded successfully, Ready to go!")
 
 @app.route("/search")
 def search():
