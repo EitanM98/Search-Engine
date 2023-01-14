@@ -12,3 +12,9 @@ To do:
   indexes: anchor, body, tittle
   ranks: page view, page rank
   query expansion: how many tokens to add.
+
+
+
+To do:
+* question mark = give more weight to body
+* title weight different

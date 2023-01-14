@@ -256,6 +256,8 @@ def search_anchor():
         if anchor_index.df.get(token, None):
             for doc_id_tf in anchor_index.read_posting_list(token):
                 doc_id = doc_id_tf[0]
+                if not doc_title_dict.get(doc_id,None):
+                    continue
                 title = doc_title_dict[doc_id]
                 counter[(doc_id, title)] += 1
 
@@ -287,7 +289,6 @@ def get_pagerank():
         return jsonify(res)
     # BEGIN SOLUTION
 
-    # TODO: check the forum for the answer
     res = [page_rank_dict.get(doc_id, -1) for doc_id in wiki_ids]
     res = list(filter(lambda x: x != -1, res))
     # END SOLUTION
