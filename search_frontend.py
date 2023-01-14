@@ -101,35 +101,31 @@ def search():
     similarity_dict = {}
 
     # Constants
-    weights = [0.55754871, 1.25785412, 0.54434859, 0.09795087, 0.38754463]
+    weights = [0.46162036, 1.42513415, 1.13945286, 1.87296152, 1.39693174]
     BODY_WEIGHT, ANCHOR_WEIGHT, TITLE_WEIGHT, PAGE_RANK_WEIGHT, PAGE_VIEW_WEIGHT = weights
+
+    if query[-1] == '?':
+        BODY_WEIGHT *= 2
 
     # Tokenizing the query
     tokens = tokenize(query)
-    # tokenized_query = tokenize(query)
-    # q_len = len(tokenized_query)
-    # expand_factor = 0
-    # if q_len == 0:
-    #     return jsonify(res)
-    # if q_len == 1:
-    #     expand_factor = 2
-    # elif q_len == 2 or q_len == 3:
-    #     expand_factor = 1
-    # else:
-    #     expand_factor = 0
-    # tokens = query_expansion(tokenized_query, expand_factor)
+
+    tokens_in_doc_title = collections.Counter()
+    tokens_in_doc_anchor = collections.Counter()
+
     for token in tokens:
 
         # Searching the term in anchor index
         if anchor_index.df.get(token, None):
             for doc_tf in anchor_index.read_posting_list(token):
-                # token_doc_anchor_occurrences[doc_tf[0]] = 1 + token_doc_anchor_occurrences.get(doc_tf[0], 0)
-                similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + ANCHOR_WEIGHT
+                tokens_in_doc_anchor[doc_tf[0]] += 1
+                similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + math.pow(ANCHOR_WEIGHT,tokens_in_doc_anchor[doc_tf[0]])
 
         # Searching the term in title index
         if title_index.df.get(token, None):
             for doc_tf in title_index.read_posting_list(token):
-                similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + TITLE_WEIGHT
+                tokens_in_doc_title[doc_tf[0]] += 1
+                similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + math.pow(TITLE_WEIGHT,tokens_in_doc_title[doc_tf[0]])
 
         # Searching the term in body index
         if body_index.df.get(token, None):
@@ -142,7 +138,7 @@ def search():
             similarity_dict[doc_id] += page_rank_dict.get(doc_id, 0) / page_rank_max * PAGE_RANK_WEIGHT
             similarity_dict[doc_id] += page_views_dict.get(doc_id, 0) / page_views_max * PAGE_VIEW_WEIGHT
 
-    top_n_results(similarity_dict, res, 100)
+    top_n_results(similarity_dict, res, 50)
 
     # END SOLUTION
     return jsonify(res)
@@ -182,7 +178,7 @@ def search_body():
     for doc in similarity_dict.keys():
         similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * doc_norm_dict[doc]
 
-    top_n_results(similarity_dict, res, 100)
+    top_n_results(similarity_dict, res, 50)
 
     # END SOLUTION
     return jsonify(res)
@@ -413,7 +409,19 @@ def query_expansion(tokenized_query, k):
     tokenized_query.update(expansion_list)
     return tokenized_query
 #
-# def query_expansion(query):
+# Query Expansion with word2vec trial
+# tokenized_query = tokenize(query)
+# q_len = len(tokenized_query)
+# expand_factor = 0
+# if q_len == 0:
+#     return jsonify(res)
+# if q_len == 1:
+#     expand_factor = 2
+# elif q_len == 2 or q_len == 3:
+#     expand_factor = 1
+# else:
+#     expand_factor = 0
+# tokens = query_expansion(tokenized_query, expand_factor)
 
 
 if __name__ == '__main__':
