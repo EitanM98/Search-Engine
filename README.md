@@ -1,6 +1,7 @@
 # About
 This report describes the development and optimization of a search engine as part of an Information Retrieval course at Ben Gurion University.
 The project was submitted by Ariel Dawidowicz and Eithan Markman. The project is focused on implementing a search engine using information retrieval techniques.
+The search engine retrieves information from the entire English Wikipedia corpus, includes all Wiki pages on August 2021.
 
 
 # Workflow
