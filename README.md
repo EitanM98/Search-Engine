@@ -6,7 +6,7 @@ The project was submitted by Ariel Dawidowicz and Eithan Markman. The project is
 # Workflow
 The project went through a process of several iterations and improvements, starting with a basic approach and then moving on to more advanced techniques. Here is a summary of the different versions:
 
-## Indexes
+## Inverted Indexes
 - Body index
 - Anchor index
 - Title index
