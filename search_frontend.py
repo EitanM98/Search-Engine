@@ -118,9 +118,9 @@ def search():
                 similarity_dict[doc_tf[0]] = similarity_dict.get(doc_tf[0], 0) + c
 
         # Adding page_rank and page_views of each relevant document
-        for doc_id in similarity_dict.keys():
-            similarity_dict[doc_id] += page_rank_dict.get(doc_id, 0) / page_rank_max * PAGE_RANK_WEIGHT
-            similarity_dict[doc_id] += page_views_dict.get(doc_id, 0) / page_views_max * PAGE_VIEW_WEIGHT
+    for doc_id in similarity_dict.keys():
+        similarity_dict[doc_id] += page_rank_dict.get(doc_id, 0) / page_rank_max * PAGE_RANK_WEIGHT
+        similarity_dict[doc_id] += page_views_dict.get(doc_id, 0) / page_views_max * PAGE_VIEW_WEIGHT
 
     top_n_results(similarity_dict, res, 50)
 
@@ -341,7 +341,7 @@ def tokenize_binary(text):
 def tokenize(text):
     tokens = [token.group() for token in RE_WORD.finditer(text.lower())]
     tokens = set(tok for tok in tokens if tok not in all_stopwords)
-    # tokens = list(tok for tok in tokens if tok not in all_stopwords) TODO: check for list or set
+    # tokens = list(tok for tok in tokens if tok not in all_stopwords)
     return tokens
 
 
@@ -363,7 +363,7 @@ def tf_idf_calc(token, doc_id, tf):
 
 
 def bm25_update(token, doc_id, tf):
-    k1 = 1.2
+    k1 = 1.5
     B = 0.75
     N = 6348910
     avgl = 319.5242353411845
