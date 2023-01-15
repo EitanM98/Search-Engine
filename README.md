@@ -1,21 +1,21 @@
-#About
+# About
 This report describes the development and optimization of a search engine as part of an Information Retrieval course at Ben Gurion University.
 The project was submitted by Ariel Dawidowicz and Eithan Markman. The project is focused on implementing a search engine using information retrieval techniques.
 
 
-#Workflow
+# Workflow
 The project went through a process of several iterations and improvements, starting with a basic approach and then moving on to more advanced techniques. Here is a summary of the different versions:
 
-#Indexes
-Body index
-Anchor index
-Title index
+## Indexes
+- Body index
+- Anchor index
+- Title index
 
-#Dictionaries
-doc_lec
-query_expansion
-doc_title
-doc_norm
+## Dictionaries
+- doc_lec
+- query_expansion
+- doc_title
+- doc_norm
 
 V1: Implemented search based on all the indexes (body, anchor, title) using BM25 similarity function and page rank and page views as additional features.
 However, the results of the MAP@40 ranking were not satisfactory.
@@ -31,18 +31,18 @@ V5: Added a case that, if the query ends with “?” more importance was given 
 
 V6: Used SciPy library’s minimize function to optimize the weight and get better results.
 
-#Technologies
+# Technologies
 The following technologies were used in this project:
 
-Python: As the programming language
-Pyspark: for large-scale data processing
-Fasttext word2vec model: for query expansion
-GCP bucket: for storing the data
-Flask: for creating web application
-SciPy library's minimize function: for optimization of the weight
-Github: as the version control system.
+- Python: As the programming language
+- Pyspark: for large-scale data processing
+- Fasttext word2vec model: for query expansion
+- GCP bucket: for storing the data
+- Flask: for creating web application
+- SciPy library's minimize function: for optimization of the weight
+- Github: as the version control system.
 
-#Conclusion
+# Conclusion
 This project demonstrates the implementation of a search engine using information retrieval techniques.
 The team went through several iterations and improvements to the initial implementation, using various techniques such as normalization,
 weight adjustments, query expansion and optimization. The final version of the engine shows improved performance in terms of precision.
