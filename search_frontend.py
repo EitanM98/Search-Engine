@@ -11,9 +11,6 @@ import json
 from inverted_index_gcp import *
 nltk.download('stopwords')
 
-#TODO: Remove this later
-import requests
-from time import time
 
 class MyFlaskApp(Flask):
     def run(self, host=None, port=None, debug=None, **options):
@@ -26,18 +23,11 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 # Initializations
 
-# Reading the indexes
-# global body_index
-# global anchor_index
-# global title_index
 body_index = InvertedIndex.read_index('.', "body_index")
 anchor_index = InvertedIndex.read_index('.', "anchor_index")
 title_index = InvertedIndex.read_index('.', "title_index")
 
 # Paths to .bin files
-# path_anchor = "/content/postings_gcp_anchor"
-# path_body = "/content/postings_gcp_body"
-# path_title = "/content/postings_gcp_title"
 path_anchor = "postings_gcp_anchor"
 path_body = "postings_gcp_body"
 path_title = "postings_gcp_title"
@@ -49,27 +39,21 @@ title_index.bin_path = path_title
 
 # Loading the dictionaries
 with open('doc_id_title_dict.pickle', 'rb') as f:
-    # global doc_title_dict
     doc_title_dict = pickle.load(f)
 
 with open('doc_len_dict.pickle', 'rb') as f:
-    # global doc_len_dict
     doc_len_dict = pickle.load(f)
 
 with open('page_views_dict.pkl', 'rb') as f:
-    # global page_views_dict
     page_views_dict = pickle.load(f)
 
 with open('page_rank_dict.pickle', 'rb') as f:
-    # global page_rank_dict
     page_rank_dict = pickle.load(f)
 
 with open('doc_norm_dict.pickle', 'rb') as f:
-    # global doc_norm_dict
     doc_norm_dict = pickle.load(f)
 
 with open('query_expansion_dict.pickle', 'rb') as f:
-    # global query_expansion_dict
     query_expansion_dict = pickle.load(f)
 
 print("All files loaded successfully, Ready to go!")
@@ -164,8 +148,8 @@ def search_body():
     query = request.args.get('query', '')
     if len(query) == 0:
         return jsonify(res)
-    # BEGIN SOLUTION
 
+    # BEGIN SOLUTION
     similarity_dict = {}
     tokens = tokenize(query)
     for token in tokens:
@@ -203,15 +187,12 @@ def search_title():
         worst where each element is a tuple (wiki_id, title).
     '''
 
-    # query=["hello world"] - > [(wiki_id, title)] sorted decreasing
-    # in a way that the title that contains most words of the query
-
     res = []
     query = request.args.get('query', '')
     if len(query) == 0:
         return jsonify(res)
-    # BEGIN SOLUTION
 
+    # BEGIN SOLUTION
     counter = collections.Counter()
     for token in tokenize(query):
         if title_index.df.get(token, None):
@@ -409,7 +390,7 @@ def query_expansion(tokenized_query, k):
 
     tokenized_query.update(expansion_list)
     return tokenized_query
-#
+
 # Query Expansion with word2vec trial
 # tokenized_query = tokenize(query)
 # q_len = len(tokenized_query)
