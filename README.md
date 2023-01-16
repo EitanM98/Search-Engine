@@ -32,6 +32,10 @@ V5: Added a case that, if the query ends with “?” more importance was given 
 
 V6: Used SciPy library’s minimize function to optimize the weight and get better results.
 
+# Process graph
+![image](https://user-images.githubusercontent.com/101277239/212707561-d0e73527-8f81-4844-974c-7c14088a2065.png)
+
+
 # Technologies
 The following technologies were used in this project:
 
