@@ -49,3 +49,5 @@ The team went through several iterations and improvements to the initial impleme
 weight adjustments, query expansion and optimization. The final version of the engine shows improved performance in terms of precision.
 However, the team faced some limitations and challenges, as some techniques did not provide the expected results.
 The project can be used as a basis for further research and development in the field of information retrieval.
+
+
