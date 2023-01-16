@@ -122,7 +122,7 @@ def search():
         similarity_dict[doc_id] += page_rank_dict.get(doc_id, 0) / page_rank_max * PAGE_RANK_WEIGHT
         similarity_dict[doc_id] += page_views_dict.get(doc_id, 0) / page_views_max * PAGE_VIEW_WEIGHT
 
-    top_n_results(similarity_dict, res, 50)
+    top_n_results(similarity_dict, res, 10)
 
     # END SOLUTION
     return jsonify(res)
@@ -162,7 +162,7 @@ def search_body():
     for doc in similarity_dict.keys():
         similarity_dict[doc] = similarity_dict[doc] * normalize(tokens) * doc_norm_dict[doc]
 
-    top_n_results(similarity_dict, res, 50)
+    top_n_results(similarity_dict, res, 30)
 
     # END SOLUTION
     return jsonify(res)
